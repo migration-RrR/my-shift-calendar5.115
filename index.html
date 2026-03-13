@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Когда Смена</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Когда Смена</h1>
+</header>
+
+<main>
+  <section class="controls">
+    <button id="today-btn">Сегодня</button>
+    <input type="date" id="date-input">
+    <button id="check-date">Показать смену</button>
+  </section>
+
+  <section class="brigade-selection">
+    <p>Выберите бригаду:</p>
+    <div class="buttons">
+      <button class="brigade-btn" data-brigade="A">-- 2 --</button>
+      <button class="brigade-btn" data-brigade="B">-- 1 --</button>
+      <button class="brigade-btn" data-brigade="C">-- 4 --</button>
+      <button class="brigade-btn" data-brigade="D">-- 3 --</button>
+    </div>
+  </section>
+
+  <section class="legend">
+    <span class="day">🟡 День</span>
+    <span class="night">🔵 Ночь</span>
+    <span class="rest">⚪ Отсыпной</span>
+    <span class="off">⚪ Выходной</span>
+  </section>
+
+  <section class="calendar"></section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
