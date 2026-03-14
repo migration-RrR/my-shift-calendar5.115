@@ -75,9 +75,19 @@ function generateCalendar(){
       const diffDays = Math.floor((date - new Date(year,0,1)) / 86400000);
       const shift = cycle[diffDays % 4];
 
-      if(shift === "day" || shift === "night"){
+      // ✔️ ДЕНЬ считается сразу
+      if(shift === "day"){
         monthHours += 11.5;
         monthShifts += 1;
+      }
+
+      // ✔️ НОЧЬ считается в следующий день
+      if(shift === "night"){
+        const nextDate = new Date(year, month, day + 1);
+        if(nextDate.getMonth() === month){
+          monthHours += 11.5;
+          monthShifts += 1;
+        }
       }
 
       const cell = document.createElement("div");
