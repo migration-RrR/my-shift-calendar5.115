@@ -1,11 +1,12 @@
 const brigadeCycles = {
-  A:["day","night","rest","off"],
-  B:["night","rest","off","day"],
-  C:["rest","off","day","night"],
-  D:["off","day","night","rest"]
+  A:["day","night","rest","off"],   // 2 бригада
+  B:["night","rest","off","day"],   // 1 бригада
+  C:["rest","off","day","night"],   // 4 бригада
+  D:["off","day","night","rest"]    // 3 бригада
 };
 
 let selectedBrigade = localStorage.getItem("brigade") || "A";
+let currentYear = new Date().getFullYear();
 
 const calendarEl = document.querySelector(".calendar");
 const todayBtn = document.getElementById("today-btn");
@@ -15,23 +16,53 @@ const checkBtn = document.getElementById("check-date");
 const monthNames = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 const weekDays = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 
-document.querySelectorAll(".brigade-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    document.querySelectorAll(".brigade-btn").forEach(b => b.classList.remove("active"));
+/* 🔥 СЕГОДНЯ = НАЧАЛО ЦИКЛА */
+const baseDate = new Date();
+baseDate.setHours(0,0,0,0);
+
+document.querySelectorAll(".brigade-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".brigade-btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     selectedBrigade = btn.dataset.brigade;
     localStorage.setItem("brigade", selectedBrigade);
     generateCalendar();
-  });
+  };
 });
 
 document.querySelector(`[data-brigade="${selectedBrigade}"]`).classList.add("active");
 
-function generateCalendar(){
-  calendarEl.innerHTML = "";
-  const year = new Date().getFullYear();
+function getShift(date){
   const cycle = brigadeCycles[selectedBrigade];
+  const diff = Math.floor((date - baseDate)/86400000);
+  let index = diff % 4;
+  if(index < 0) index += 4;
+  return cycle[index];
+}
+
+function generateCalendar(){
+
+  calendarEl.innerHTML = "";
+
+  const yearTitle = document.createElement("h1");
+  yearTitle.style.textAlign = "center";
+  yearTitle.innerHTML = `
+    <button id="prevYear">←</button>
+    ${currentYear}
+    <button id="nextYear">→</button>
+  `;
+  calendarEl.appendChild(yearTitle);
+
+  document.getElementById("prevYear").onclick = ()=>{
+    currentYear--;
+    generateCalendar();
+  };
+
+  document.getElementById("nextYear").onclick = ()=>{
+    currentYear++;
+    generateCalendar();
+  };
+
   const today = new Date();
 
   for(let month=0; month<12; month++){
@@ -43,7 +74,7 @@ function generateCalendar(){
     monthDiv.className = "month";
 
     const title = document.createElement("h2");
-    title.textContent = monthNames[month] + " " + year;
+    title.textContent = monthNames[month] + " " + currentYear;
     monthDiv.appendChild(title);
 
     const weekHeader = document.createElement("div");
@@ -60,8 +91,8 @@ function generateCalendar(){
     const daysContainer = document.createElement("div");
     daysContainer.className = "days-container";
 
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(currentYear, month+1, 0).getDate();
+    const firstDay = new Date(currentYear, month, 1).getDay();
     let offset = firstDay === 0 ? 6 : firstDay - 1;
 
     for(let i=0;i<offset;i++){
@@ -71,22 +102,20 @@ function generateCalendar(){
     }
 
     for(let day=1; day<=daysInMonth; day++){
-      const date = new Date(year, month, day);
-      const diffDays = Math.floor((date - new Date(year,0,1)) / 86400000);
-      const shift = cycle[diffDays % 4];
 
-      // ✔️ ДЕНЬ считается сразу
+      const date = new Date(currentYear, month, day);
+      const shift = getShift(date);
+
       if(shift === "day"){
         monthHours += 11.5;
-        monthShifts += 1;
+        monthShifts++;
       }
 
-      // ✔️ НОЧЬ считается в следующий день
       if(shift === "night"){
-        const nextDate = new Date(year, month, day + 1);
-        if(nextDate.getMonth() === month){
+        const next = new Date(currentYear, month, day+1);
+        if(next.getMonth() === month){
           monthHours += 11.5;
-          monthShifts += 1;
+          monthShifts++;
         }
       }
 
@@ -99,13 +128,11 @@ function generateCalendar(){
       popup.textContent = formatShift(shift);
       cell.appendChild(popup);
 
-      cell.addEventListener("click", ()=>{
+      cell.onclick = ()=>{
         document.querySelectorAll(".day-cell")
-          .forEach(c => c.classList.remove("selected","show-popup"));
-
+          .forEach(c=>c.classList.remove("selected","show-popup"));
         cell.classList.add("selected","show-popup");
-        cell.scrollIntoView({behavior:"smooth",block:"center"});
-      });
+      };
 
       if(date.toDateString() === today.toDateString()){
         cell.classList.add("today");
@@ -128,22 +155,31 @@ function generateCalendar(){
   }
 }
 
-todayBtn.addEventListener("click", ()=>{
+todayBtn.onclick = ()=>{
   const target = document.querySelector(".day-cell.today");
   if(target){
     document.querySelectorAll(".day-cell")
-      .forEach(c => c.classList.remove("selected","show-popup"));
-
+      .forEach(c=>c.classList.remove("selected","show-popup"));
     target.classList.add("selected","show-popup");
     target.scrollIntoView({behavior:"smooth",block:"center"});
   }
-});
+};
 
-checkBtn.addEventListener("click", ()=>{
+checkBtn.onclick = ()=>{
   if(!dateInput.value) return;
 
   const d = new Date(dateInput.value + "T00:00");
 
+  if(d.getFullYear() !== currentYear){
+    currentYear = d.getFullYear();
+    generateCalendar();
+    setTimeout(()=> highlightDate(d),100);
+  }else{
+    highlightDate(d);
+  }
+};
+
+function highlightDate(d){
   const monthDivs = document.querySelectorAll(".month");
   const targetMonth = monthDivs[d.getMonth()];
   const dayCells = targetMonth.querySelectorAll(".day-cell:not(.empty)");
@@ -157,7 +193,7 @@ checkBtn.addEventListener("click", ()=>{
     targetDay.classList.add("selected","show-popup");
     targetDay.scrollIntoView({behavior:"smooth",block:"center"});
   }
-});
+}
 
 function formatShift(s){
   return s==="day"?"День":
